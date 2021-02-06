@@ -1,6 +1,8 @@
 """
 Agent for Kaggle's Candy Cane XMas game, 2020
 
+Code written by Neil Slater. Includes ideas and results of analysis by Chris Sherlock.
+
 This agent combines two variants of a UCB-like strategy.
 
 The estimated reward is based on a Bayesian distribution model of own pull data and a model of decay,
@@ -11,8 +13,9 @@ To this is added a UCB-like exploration bonus, based on uncertainty in the origi
 bonus is multiplied by a factor that varies over time, starting high to encourage exploration, and reducing
 to low values towards the end of the game.
 
-Finally, and where the variants most differ, an extra "follow the opponent" bonus is added based on a trace
-of opponent's behaviour.
+Finally, and where the variants most differ, an extra "wideboy" bonus is added based on a trace
+of opponent's behaviour, using opponent's moves as guided exploration, and in the case of agentB, forcing
+decay on bandits that the opponent seems to believe are good.
 
 The selected action is always the argmax of this score function calculated for all bandits.
 
@@ -535,9 +538,9 @@ class ActionSelectorAgentA():
         if ts > 1199:
             tsa_schedule = self.tsf_c
 
-        opp_trace_adjust = a.opp_rep_trace * self.trace_select_factor * tsa_schedule
+        wideboy_bonus = a.opp_rep_trace * self.trace_select_factor * tsa_schedule
 
-        scores = p.expected_via_model + quantile_fraction + opp_trace_adjust + self.pref
+        scores = p.expected_via_model + quantile_fraction + wideboy_bonus + self.pref
         return int(np.argmax(scores))
 
 
@@ -568,9 +571,9 @@ class ActionSelectorAgentB():
 
         follow_trace_scale = self.follow_trace_p * b.expected
 
-        trace_follow = a.opp_acc_trace * follow_trace_scale
+        wideboy_bonus = a.opp_acc_trace * follow_trace_scale
 
-        scores = p.expected_via_model + quantile_fraction + trace_follow + self.pref
+        scores = p.expected_via_model + quantile_fraction + wideboy_bonus + self.pref
 
         return int(np.argmax(scores))
 
